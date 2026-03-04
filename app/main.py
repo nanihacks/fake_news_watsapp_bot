@@ -2,6 +2,8 @@ from fastapi import FastAPI,Request,Response
 from app.database import messages_collection
 from twilio.twiml.messaging_response import MessagingResponse
 from services.fact_check import check_fact
+from services.llm_check import llm_check
+from utils.claim_extractor import extract_claim
 
 app = FastAPI()
 
@@ -25,12 +27,14 @@ async def test_db():
 @app.post("/webhook/whatsapp")
 async def whatsapp_webhook(request: Request):
 
-    # 1️⃣ Get message from Twilio
     form_data = await request.form()
     incoming_msg = form_data.get("Body")
 
-    # 2️⃣ Run fact check
-    result = check_fact(incoming_msg)
+    print("Incoming message:", incoming_msg)
+
+    claim = extract_claim(incoming_msg)
+
+    result = check_fact(claim)
 
     if result:
         reply = f"""
@@ -40,9 +44,20 @@ Rating: {result['result']}
 Source: {result['source']}
 """
     else:
-        reply = "⚠ No verified fact check found."
+        ai_result = llm_check(claim)
 
-    # 3️⃣ Send response back to WhatsApp
+        reply = f"""
+🤖 AI Analysis
+
+{ai_result}
+"""
+
+    await messages_collection.insert_one({
+        "original_message": incoming_msg,
+        "claim": claim,
+        "result": reply
+    })
+
     resp = MessagingResponse()
     msg = resp.message()
     msg.body(reply)
