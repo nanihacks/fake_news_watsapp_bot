@@ -6,17 +6,28 @@ client = OpenAI(api_key=settings.OPENAI_API_KEY)
 def llm_check(message):
 
     prompt = f"""
-Determine if the following claim is fake news.
+You are a fact-checking assistant.
+
+Analyze the following claim and determine if it is likely fake news.
 
 Claim: {message}
 
-Respond with Fake / Possibly True / Unverified
-and explain briefly.
+Respond in this format:
+
+Verdict: Fake / Possibly True / Unverified
+Reason: short explanation
 """
 
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=120,
+            temperature=0.2
+        )
 
-    return response.choices[0].message.content
+        return response.choices[0].message.content
+
+    except Exception as e:
+        print("LLM error:", e)
+        return "AI analysis unavailable right now."

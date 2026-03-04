@@ -1,5 +1,4 @@
-from fastapi import FastAPI,Request,Response
-from app.database import messages_collection
+from fastapi import FastAPI, Request, Response
 from twilio.twiml.messaging_response import MessagingResponse
 from services.fact_check import check_fact
 from services.llm_check import llm_check
@@ -11,10 +10,6 @@ app = FastAPI()
 async def home():
     return {"message": "Fake News Bot Running"}
 
-
-
-
-
 @app.post("/webhook/whatsapp")
 async def whatsapp_webhook(request: Request):
 
@@ -22,6 +17,9 @@ async def whatsapp_webhook(request: Request):
     incoming_msg = form_data.get("Body")
 
     print("Incoming message:", incoming_msg)
+
+    if not incoming_msg:
+        incoming_msg = "No text message received"
 
     claim = extract_claim(incoming_msg)
 
@@ -35,7 +33,11 @@ Rating: {result['result']}
 Source: {result['source']}
 """
     else:
-        ai_result = llm_check(claim)
+        try:
+            ai_result = llm_check(claim)
+        except Exception as e:
+            print("LLM error:", e)
+            ai_result = "AI analysis unavailable right now."
 
         reply = f"""
 🤖 AI Analysis
@@ -43,7 +45,6 @@ Source: {result['source']}
 {ai_result}
 """
 
-    
     resp = MessagingResponse()
     msg = resp.message()
     msg.body(reply)
