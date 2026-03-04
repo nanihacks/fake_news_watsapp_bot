@@ -1,4 +1,4 @@
-from fastapi import FastAPI,Request
+from fastapi import FastAPI,Request,Response
 from app.database import messages_collection
 from twilio.twiml.messaging_response import MessagingResponse
 
@@ -22,16 +22,14 @@ async def test_db():
 
 
 @app.post("/webhook/whatsapp")
+@app.post("/webhook/whatsapp")
 async def whatsapp_webhook(request: Request):
 
     form_data = await request.form()
     incoming_msg = form_data.get("Body")
 
-    print("User message:", incoming_msg)
-
-    response = MessagingResponse()
-    msg = response.message()
-
+    resp = MessagingResponse()
+    msg = resp.message()
     msg.body(f"You said: {incoming_msg}")
 
-    return str(response)
+    return Response(content=str(resp), media_type="application/xml")
