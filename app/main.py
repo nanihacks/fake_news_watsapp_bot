@@ -11,16 +11,7 @@ app = FastAPI()
 async def home():
     return {"message": "Fake News Bot Running"}
 
-@app.get("/test-db")
-async def test_db():
 
-    await messages_collection.insert_one({
-        "message": "MongoDB async test",
-        "result": "test",
-        "confidence": 1.0
-    })
-
-    return {"status": "Async data inserted"}
 
 
 
@@ -52,12 +43,7 @@ Source: {result['source']}
 {ai_result}
 """
 
-    await messages_collection.insert_one({
-        "original_message": incoming_msg,
-        "claim": claim,
-        "result": reply
-    })
-
+    
     resp = MessagingResponse()
     msg = resp.message()
     msg.body(reply)
